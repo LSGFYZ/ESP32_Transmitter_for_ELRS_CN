@@ -1,0 +1,136 @@
+#pragma once
+#ifndef OLED_H
+#define OLED_H
+//#define TIMINGDEBUG
+/*
+ * This file is part of ESP32C3-TX
+ *
+ * ESP32C3-TX is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ESP32C3-TX is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * <http://www.gnu.org/licenses/>.
+ */
+#include <Wire.h>
+#include "elrs.h"
+#include "config.h"
+#include "params.h"
+#include <U8g2lib.h>
+
+// Two options for the OLED definition. 
+// The ESP32-C3 comes with different OLED screens depending on the seller. If your screen shows garbled or offset,
+// try OLED_OPTION_2 (add "//" at the start of the line for OLED_OPTION_1 and remove "//" from the start of OLED_OPTION_2). 
+// Alternatively, you can edit the offsets on their own 
+#define OLED_OPTION_1
+//#define OLED_OPTION_2
+
+#ifdef OLED_OPTION_1
+extern U8G2_SSD1306_72X40_ER_F_HW_I2C display;
+ //----- OLED Screen setup  -------------------
+const int OLED_X_OFFSET = 0; // Standard alignment for 0.42" 72x40 on 128px space
+const int OLED_Y_OFFSET = 0; // Adjusted to shift the 40px matrix vertically if needed
+#endif
+#ifdef OLED_OPTION_2
+extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C display;
+ //----- OLED Screen setup  -------------------
+const int OLED_X_OFFSET = 30; // Visible 72x40 area starts at X=30 in the 128x64 controller buffer
+const int OLED_Y_OFFSET = 12; // Visible 72x40 area starts at Y=12 in the 128x64 controller buffer
+#endif
+const int OLED_WIDTH = 72;
+const int OLED_HEIGHT = 40;
+
+enum displayState {MAIN_PAGE, ELRS_STATS, ELRS_MENU, CHANNEL_OUTPUTS, CHANNEL_MENU, BT_JOYSTICK, MODEL_FINDER, CALIBRATION};
+extern displayState currentScreen; 
+extern displayState lastScreen;
+enum menuMode { MENU_BROWSE, MENU_EDIT };
+extern menuMode menuState;
+
+void initDisplay();
+void drawBootLogo();
+void clearScreen();
+void nextScreen();
+
+static void updateLogicalDisplayArea(uint8_t logicalTileX, uint8_t logicalTileY, uint8_t logicalTileW, uint8_t logicalTileH);
+void drawHomeScreen(float voltage, bool aircraftVoltageMode, int telemetryState, uint8_t uplinkLQ, int16_t channels[],int16_t minChannelValue,int16_t maxChannelValue);
+void drawElrsStatsScreen(const ELRS& elrs);
+void drawChannelOutputsScreen(int16_t channels[], int16_t min, int16_t max);
+void drawBtJoystickScreen(bool btJoystickActive);
+
+void drawCalibrationScreen(int stage, int secondsLeft);
+
+void drawMenuScreen(const ParamCollection& menu);
+void drawScrollingMenuValue(const char* text, int textX, int textY, int displayAreaWidth);
+void drawMenuItem(const crsfParameter& menuItem, int offsetX, int offsetY);
+void animateMenu(const ParamCollection& menu);
+void drawEditValue(const crsfParameter& menuItem, int32_t editValue, int offsetX, int offsetY);
+void animateEditValue(const ParamCollection& menu);
+void drawScrollingPopupText(const char* text, int textX, int textY, int displayAreaWidth);
+void drawPopup(const ParamCollection& menu);
+int  navigateMenu(ParamCollection &menu, uint8_t direction);
+void handleNavigation(int navigate, Handset& handset, ELRS& elrs, bool& toggleBtJoystick, bool& startCalibration );
+void drawModelFinderScreen(int raw, int avg, int strength);
+
+void drawMessage(char title[], char line1[], char line2[]);
+
+
+// NanoTX Logo
+// Dimensions: 72 x 40 pixels
+const uint8_t nanotx_logo_72x40[] U8X8_PROGMEM = {
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00001100, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000010, B00001000,
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00001010, B00010000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00100101, B00100100, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B10010100, B00101001, 
+  B00000000, B11111100, B11111111, B11111111, B11111111, B11111111, B11111111, B11010100, B00101001,
+  B10000000, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B11000100, B00101000, 
+  B11000000, B00000001, B00000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00100100, 
+  B11100000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00110000, B00010000, 
+  B01100000, B00111000, B00000110, B00000000, B00000000, B11000000, B10011111, B00010001, B00000000,
+  B00110000, B01111000, B00000110, B00000000, B00000000, B00000000, B10000111, B00001011, B00100000, 
+  B00110000, B01111000, B11000110, B11001111, B10001111, B00001111, B00000111, B00001111, B01100000, 
+  B00110000, B10011000, B01100110, B11001100, B11011100, B00011000, B00000111, B00001110, B01100000, 
+  B00110000, B10011000, B01100111, B11001100, B11011000, B00011000, B00000111, B00011111, B01100000,
+  B00110000, B00011000, B01100111, B11001100, B11011000, B00011000, B10000111, B00011001, B00110000, 
+  B01100000, B00011000, B11000110, B11001111, B10011000, B00001111, B11000111, B00110000, B00110000, 
+  B11100000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00011000, 
+  B11000000, B00000001, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00001110,
+  B00000000, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B00000111, 
+  B00000000, B11111100, B11111111, B11111111, B11111111, B11111111, B11111111, B11111111, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, 
+  B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
+};
+
+const uint8_t bt_logo_8x10[] = { B00001000, 
+                                 B00011000, 
+                                 B00101010, 
+                                 B00011100, 
+                                 B00001000, 
+                                 B00011100, 
+                                 B00101010, 
+                                 B00011000, 
+                                 B00001000,
+                                 B00000000 };
+#endif
