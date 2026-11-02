@@ -1,3 +1,26 @@
+ESP32_Transmitter_for_ELRS_CN
+
+ESP32 Transmitter for ELRS — Simplified Chinese Edition
+
+本项目基于原作者 dbloemhard 的 ESP32 Transmitter for ELRS 项目进行汉化和功能扩展。
+
+Original Project:
+https://github.com/dbloemhard/ESP32_Transmitter_for_ELRS
+
+Original Author: dbloemhard
+
+主要改进
+
+OLED 界面简体中文汉化
+
+增加 ELRS 接收机电池电压回传
+
+增加接收机电压显示
+
+OLED 显示布局优化
+
+本项目保留原项目版权声明，并遵循 GPL-3.0 许可证的适用要求。
+
 ESP32 C3 Nano TX
 
 ESP32 C3 Nano 尺寸的 ExpressLRS 发射机，最初基于 Simple TX Arduino 发射机项目改造，并增加了一些额外功能。
