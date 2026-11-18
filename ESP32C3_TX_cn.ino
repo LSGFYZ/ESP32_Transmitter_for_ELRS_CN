@@ -718,21 +718,33 @@ void mapChannels() {
             int32_t steering = (int32_t)rcChannels[steeringIn] - 992;
 
             if (transmitter.globalSettings.throttleCentered) {
-                // Centered throttle: 992 is neutral, allowing forward and reverse.
                 throttle = (int32_t)rcChannels[throttleIn] - 992;
             } else {
-                // Uncentered throttle: 172 is idle and output remains forward-only.
+                // Uncentered throttle: 172 is idle; reverse is not generated.
                 throttle = (int32_t)rcChannels[throttleIn] - CRSF_DIGITAL_CHANNEL_MIN;
             }
 
-            if (transmitter.globalSettings.mixSteeringReverse) steering = -steering;
-            steering = (steering * transmitter.globalSettings.mixRate) / 100;
+            throttle = (throttle * transmitter.globalSettings.mixThrottleRate) / 100;
+            steering = (steering * transmitter.globalSettings.mixSteeringRate) / 100;
 
             int32_t leftValue;
             int32_t rightValue;
             if (transmitter.globalSettings.throttleCentered) {
-                leftValue = 992 + throttle + steering;
-                rightValue = 992 + throttle - steering;
+                int32_t leftOffset = throttle + steering;
+                int32_t rightOffset = throttle - steering;
+
+                // Without pivot mode, steering can slow one motor but cannot reverse it.
+                if (!transmitter.globalSettings.mixSpin) {
+                    if (throttle >= 0) {
+                        leftOffset = max((int32_t)0, leftOffset);
+                        rightOffset = max((int32_t)0, rightOffset);
+                    } else {
+                        leftOffset = min((int32_t)0, leftOffset);
+                        rightOffset = min((int32_t)0, rightOffset);
+                    }
+                }
+                leftValue = 992 + leftOffset;
+                rightValue = 992 + rightOffset;
             } else {
                 leftValue = CRSF_DIGITAL_CHANNEL_MIN + throttle + steering;
                 rightValue = CRSF_DIGITAL_CHANNEL_MIN + throttle - steering;
