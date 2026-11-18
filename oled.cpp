@@ -845,8 +845,9 @@ void drawMenuScreen(const ParamCollection& menu) {
             // 编辑模式：顶部标签 + 编辑框 + 方向箭头
             // 先绘制边框，再绘制标签，避免边框覆盖较高的中文字体字形
             display.drawFrame(OLED_X_OFFSET, OLED_Y_OFFSET + 14, 72, 26);
-            display.setCursor(OLED_X_OFFSET + 3, OLED_Y_OFFSET + 12);
-            printUiText(param.label);
+            // 参数编辑页左上角使用原始英文标签（如 THR / EXPO），不经过中文翻译和大字体切换。
+            // 这样保留原版短标注，避免中文字体/基线处理造成残缺字符。
+            display.drawStr(OLED_X_OFFSET + 3, OLED_Y_OFFSET + 12, param.label);
 
             // 根据值和类型绘制可调方向箭头
             if (menu.editValue > param.minVal) {   
@@ -871,7 +872,23 @@ void drawMenuScreen(const ParamCollection& menu) {
             break;
 
         default: // MENU_BROWSE
-            // 浏览模式：不绘制额外方向箭头，保持菜单界面简洁
+            // 恢复原版四向导航箭头：上/下切换项目，左返回，右进入文件夹。
+            if (param.id > 0) { // 上箭头
+                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+30, OLED_Y_OFFSET+0, 11, 6);
+                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+31, OLED_Y_OFFSET+5, OLED_X_OFFSET+39, OLED_Y_OFFSET+5, OLED_X_OFFSET+35, OLED_Y_OFFSET+0);
+            }
+            if (param.id < menu.paramCount) { // 下箭头
+                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+30, OLED_Y_OFFSET+35, 11, 6);
+                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+31, OLED_Y_OFFSET+36, OLED_X_OFFSET+39, OLED_Y_OFFSET+36, OLED_X_OFFSET+35, OLED_Y_OFFSET+40);
+            }
+            if (param.parentFolder > 0) { // 左箭头：返回上级
+                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+0, OLED_Y_OFFSET+14, 5, 11);
+                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+4, OLED_Y_OFFSET+15, OLED_X_OFFSET+4, OLED_Y_OFFSET+23, OLED_X_OFFSET+0, OLED_Y_OFFSET+19);
+            }
+            if (param.type == CRSF_FOLDER) { // 右箭头：进入子菜单
+                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+66, OLED_Y_OFFSET+14, 5, 11);
+                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+67, OLED_Y_OFFSET+15, OLED_X_OFFSET+67, OLED_Y_OFFSET+23, OLED_X_OFFSET+71, OLED_Y_OFFSET+19);
+            }
             animateMenu(menu);
             break;
     }
