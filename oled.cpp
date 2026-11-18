@@ -870,23 +870,7 @@ void drawMenuScreen(const ParamCollection& menu) {
             break;
 
         default: // MENU_BROWSE
-            // 浏览模式：四向导航箭头
-            if (param.id > 0) { // 上箭头
-                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+30, OLED_Y_OFFSET+0, 11, 6);
-                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+31, OLED_Y_OFFSET+5, OLED_X_OFFSET+39, OLED_Y_OFFSET+5, OLED_X_OFFSET+35, OLED_Y_OFFSET+0);
-            }
-            if (param.id < menu.paramCount) { // 下箭头
-                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+30, OLED_Y_OFFSET+35, 11, 6);
-                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+31, OLED_Y_OFFSET+36, OLED_X_OFFSET+39, OLED_Y_OFFSET+36, OLED_X_OFFSET+35, OLED_Y_OFFSET+40);
-            }    
-            if (param.parentFolder > 0) { // 左箭头（返回上级）
-                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+0, OLED_Y_OFFSET+14, 5, 11);
-                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+4, OLED_Y_OFFSET+15, OLED_X_OFFSET+4, OLED_Y_OFFSET+23, OLED_X_OFFSET+0, OLED_Y_OFFSET+19);
-            }    
-            if (param.type == CRSF_FOLDER) { // 右箭头（进入子菜单）
-                display.setDrawColor(0); display.drawBox(OLED_X_OFFSET+66, OLED_Y_OFFSET+14, 5, 11);
-                display.setDrawColor(1); display.drawTriangle(OLED_X_OFFSET+67, OLED_Y_OFFSET+15, OLED_X_OFFSET+67, OLED_Y_OFFSET+23, OLED_X_OFFSET+71, OLED_Y_OFFSET+19);
-            }
+            // 浏览模式：不绘制额外方向箭头，保持菜单界面简洁
             animateMenu(menu);
             break;
     }
