@@ -142,15 +142,20 @@ void Handset::loadGlobalSettings(bool initialize) {
     addChoiceParam(idx++, mixFolder, "Mix Right Out", channelChoices,
                    globalSettings.mixRightOutput, 1, 12);
 
-    globalSettings.mixRate = configPrefs.getUChar("Mix Rate", 100);
-    if (globalSettings.mixRate > 100) globalSettings.mixRate = 100;
-    addNumericParam(idx++, mixFolder, CRSF_UINT8, "Mix Rate",
-                    globalSettings.mixRate, 0, 100, 5, "%");
+    globalSettings.mixThrottleRate = configPrefs.getUChar("Mix Thr Rate", 100);
+    if (globalSettings.mixThrottleRate > 100) globalSettings.mixThrottleRate = 100;
+    addNumericParam(idx++, mixFolder, CRSF_UINT8, "Mix Thr Rate",
+                    globalSettings.mixThrottleRate, 0, 100, 5, "%");
 
-    globalSettings.mixSteeringReverse = configPrefs.getBool("Mix Steer Rev", false);
-    addChoiceParam(idx++, mixFolder, "Mix Steer Rev",
-                   {"Normal", "Reverse"},
-                   globalSettings.mixSteeringReverse ? 1 : 0, 0, 1);
+    globalSettings.mixSteeringRate = configPrefs.getChar("Mix Steer Rate", 100);
+    if (globalSettings.mixSteeringRate < -100) globalSettings.mixSteeringRate = -100;
+    if (globalSettings.mixSteeringRate > 100) globalSettings.mixSteeringRate = 100;
+    addNumericParam(idx++, mixFolder, CRSF_INT8, "Mix Steer Rate",
+                    globalSettings.mixSteeringRate, -100, 100, 5, "%");
+
+    globalSettings.mixSpin = configPrefs.getBool("Mix Spin", true);
+    addChoiceParam(idx++, mixFolder, "Mix Spin", {"Off", "On"},
+                   globalSettings.mixSpin ? 1 : 0, 0, 1);
 
     configPrefs.end(); // 关闭NVS命名空间释放资源
 }
@@ -167,9 +172,11 @@ void Handset::saveGlobalSettings() {
     configPrefs.begin("settings", false);
     switch (param.type) {
         case CRSF_UINT8:
-        case CRSF_INT8:
         case CRSF_TEXT_SELECTION:
             configPrefs.putUChar(key, (uint8_t)value);
+            break;
+        case CRSF_INT8:
+            configPrefs.putChar(key, (int8_t)value);
             break;
         case CRSF_UINT16:
         case CRSF_INT16:
