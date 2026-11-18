@@ -1008,9 +1008,11 @@ void statusDisplay(){
     int connectionState = 0;
     uint32_t currentTime = millis();
     static uint32_t lastScreenUpdateTime = 0;
-    // 首页包含实时摇杆准星：固定约 30 FPS 刷新，避免 ARMED 状态下原先 500ms（仅 2 FPS）造成卡顿。
-    // 其他页面仍沿用原来的低刷新频率，避免无谓增加菜单页刷新开销。
-    uint16_t screenUpdateTime = (currentScreen == MAIN_PAGE) ? 33 :
+    // 主页和通道输出页都显示实时摇杆/通道位置，统一固定约 30 FPS。
+    // 原先 CHANNEL_OUTPUTS 在 ARMED 状态下只有 2 FPS（500ms），未解锁时也只有 10 FPS（100ms），
+    // 因此拨杆时明显一卡一卡；现在与首页保持相同刷新节奏。
+    // 其他静态页面仍保持原有刷新频率，避免增加不必要的 OLED 总线负担。
+    uint16_t screenUpdateTime = (currentScreen == MAIN_PAGE || currentScreen == CHANNEL_OUTPUTS) ? 33 :
                                 ((ARMED && !btJoystickModeActive) ? 500 : 100);
     if (currentTime - lastScreenUpdateTime >= screenUpdateTime) { 
         lastScreenUpdateTime = currentTime;
