@@ -99,6 +99,16 @@ struct HandsetSettings {
     bool reverse[4];            // 四主通道反向标志：索引对应 A/E/T/R，true=反向
     uint8_t limit[4];           // 四主通道行程限制：0-100%，索引对应 A/E/T/R
     uint8_t expo[4];            // 四主通道指数曲线：0-100%，索引对应 A/E/T/R，改善手感线性度
+
+    // Differential mixer settings; channel numbers are 1-12 (CRSF CH1-CH12).
+    uint8_t mixMode;              // 0=Off, 1=Differential, 2=Custom (reserved)
+    uint8_t mixThrottleInput;     // Throttle input channel
+    uint8_t mixSteeringInput;     // Steering input channel
+    uint8_t mixLeftOutput;        // Left motor output channel
+    uint8_t mixRightOutput;       // Right motor output channel
+    uint8_t mixThrottleRate;      // Throttle mix rate, 0-100%
+    int8_t mixSteeringRate;       // Steering mix rate, -100% to +100%; sign also selects direction
+    bool mixSpin;                 // Allow pivot turns (opposite motor directions)
 };
 
 // Handset 类：封装手台设置的加载、保存与菜单构建逻辑

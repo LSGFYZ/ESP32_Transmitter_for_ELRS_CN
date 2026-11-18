@@ -101,32 +101,93 @@ void Handset::loadGlobalSettings(bool initialize) {
         // 注意：组合后的标签名必须 < 15字符（NVS键名限制）
     }
 
+
+    // --- Differential mixer menu ---
+    // Channel numbers are 1-12. Defaults: throttle CH3, steering CH4, outputs CH1/CH2.
+    const std::vector<const char*> channelChoices = {
+        "", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6",
+        "CH7", "CH8", "CH9", "CH10", "CH11", "CH12"
+    };
+
+    int mixFolder = idx;
+    addFolder(idx++, 0, "Mixing");
+
+    globalSettings.mixMode = configPrefs.getUChar("Mix Mode", 0);
+    if (globalSettings.mixMode > 2) globalSettings.mixMode = 0;
+    addChoiceParam(idx++, mixFolder, "Mix Mode",
+                   {"Off", "Differential", "Custom"},
+                   globalSettings.mixMode, 0, 2);
+
+    globalSettings.mixThrottleInput = configPrefs.getUChar("Mix Thr In", 3);
+    if (globalSettings.mixThrottleInput < 1 || globalSettings.mixThrottleInput > 12)
+        globalSettings.mixThrottleInput = 3;
+    addChoiceParam(idx++, mixFolder, "Mix Thr In", channelChoices,
+                   globalSettings.mixThrottleInput, 1, 12);
+
+    globalSettings.mixSteeringInput = configPrefs.getUChar("Mix Steer In", 4);
+    if (globalSettings.mixSteeringInput < 1 || globalSettings.mixSteeringInput > 12)
+        globalSettings.mixSteeringInput = 4;
+    addChoiceParam(idx++, mixFolder, "Mix Steer In", channelChoices,
+                   globalSettings.mixSteeringInput, 1, 12);
+
+    globalSettings.mixLeftOutput = configPrefs.getUChar("Mix Left Out", 1);
+    if (globalSettings.mixLeftOutput < 1 || globalSettings.mixLeftOutput > 12)
+        globalSettings.mixLeftOutput = 1;
+    addChoiceParam(idx++, mixFolder, "Mix Left Out", channelChoices,
+                   globalSettings.mixLeftOutput, 1, 12);
+
+    globalSettings.mixRightOutput = configPrefs.getUChar("Mix Right Out", 2);
+    if (globalSettings.mixRightOutput < 1 || globalSettings.mixRightOutput > 12)
+        globalSettings.mixRightOutput = 2;
+    addChoiceParam(idx++, mixFolder, "Mix Right Out", channelChoices,
+                   globalSettings.mixRightOutput, 1, 12);
+
+    globalSettings.mixThrottleRate = configPrefs.getUChar("Mix Thr Rate", 100);
+    if (globalSettings.mixThrottleRate > 100) globalSettings.mixThrottleRate = 100;
+    addNumericParam(idx++, mixFolder, CRSF_UINT8, "Mix Thr Rate",
+                    globalSettings.mixThrottleRate, 0, 100, 5, "%");
+
+    globalSettings.mixSteeringRate = configPrefs.getChar("Mix Steer Rate", 100);
+    if (globalSettings.mixSteeringRate < -100) globalSettings.mixSteeringRate = -100;
+    if (globalSettings.mixSteeringRate > 100) globalSettings.mixSteeringRate = 100;
+    addNumericParam(idx++, mixFolder, CRSF_INT8, "Mix Steer Rate",
+                    globalSettings.mixSteeringRate, -100, 100, 5, "%");
+
+    globalSettings.mixSpin = configPrefs.getBool("Mix Spin", true);
+    addChoiceParam(idx++, mixFolder, "Mix Spin", {"Off", "On"},
+                   globalSettings.mixSpin ? 1 : 0, 0, 1);
+
     configPrefs.end(); // 关闭NVS命名空间释放资源
 }
 
 // ==================== 保存当前编辑的设置到NVS ====================
 void Handset::saveGlobalSettings() {
-    // 以读写模式打开 NVS
-    configPrefs.begin("settings", false);
+    // Copy the edited item, close NVS, then refresh settings to avoid reopening
+    // the same Preferences namespace while it is still active.
+    const crsfParameter &param = handsetSettingsMenu.getCurrentParam();
+    char key[CRSF_MAX_STRING_LEN] = {0};
+    strncpy(key, param.label, sizeof(key) - 1);
+    const int32_t value = handsetSettingsMenu.editValue;
 
-    // 根据当前参数的数据类型选择对应的NVS写入方法
-    switch (handsetSettingsMenu.getCurrentParam().type) {
+    configPrefs.begin("settings", false);
+    switch (param.type) {
         case CRSF_UINT8:
-        case CRSF_INT8:
         case CRSF_TEXT_SELECTION:
-            // ⚠️ 使用参数标签(label)作为NVS键名
-            configPrefs.putUChar(handsetSettingsMenu.getCurrentParam().label, handsetSettingsMenu.editValue);
-            loadGlobalSettings(false); // 回读到内存并刷新菜单显示值
+            configPrefs.putUChar(key, (uint8_t)value);
+            break;
+        case CRSF_INT8:
+            configPrefs.putChar(key, (int8_t)value);
             break;
         case CRSF_UINT16:
         case CRSF_INT16:
-            configPrefs.putUShort(handsetSettingsMenu.getCurrentParam().label, handsetSettingsMenu.editValue);
-            loadGlobalSettings(false);
+            configPrefs.putUShort(key, (uint16_t)value);
             break;
         default:
-            break; // 不支持的类型静默忽略
+            configPrefs.end();
+            return;
     }
     configPrefs.end();
+    loadGlobalSettings(false);
 }
 
 // ==================== 执行本地设置命令（预留接口）====================

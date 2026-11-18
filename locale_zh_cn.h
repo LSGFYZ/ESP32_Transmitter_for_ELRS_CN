@@ -45,6 +45,14 @@ static const UiTranslation UI_TRANSLATIONS[] = {
     {"25Hz", "25Hz"}, {"50Hz", "50Hz"}, {"100Hz", "100Hz"},
     {"150Hz", "150Hz"}, {"200Hz", "200Hz"}, {"250Hz", "250Hz"},
     {"333Hz", "333Hz"}, {"500Hz", "500Hz"}, {"DShot", "DShot"},
+
+    // Differential mixer menu
+    {"Mixing", "混控"}, {"Mix Mode", "混控模式"},
+    {"Mix Thr In", "油门输入"}, {"Mix Steer In", "转向输入"},
+    {"Mix Left Out", "左电机输出"}, {"Mix Right Out", "右电机输出"},
+    {"Mix Thr Rate", "油门混控比例"}, {"Mix Steer Rate", "转向混控比例"},
+    {"Mix Spin", "原地旋转"}, {"Differential", "差速混控"},
+    {"Custom", "自定义"},
 };
 
 static inline const char* translateUiText(const char* text) {

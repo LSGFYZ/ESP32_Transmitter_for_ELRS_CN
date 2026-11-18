@@ -701,7 +701,64 @@ void mapChannels() {
 
     rcChannels[AUX1] = (stickValues[SW1] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
     rcChannels[AUX2] = (stickValues[SW2] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
-    rcChannels[AUX3] = (stickValues[SW3] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;    
+    rcChannels[AUX3] = (stickValues[SW3] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
+
+    // Differential mixer runs after normal channel mapping and AUX assignment.
+    // CUSTOM is reserved for a future implementation; only mode 1 mixes.
+    if (transmitter.globalSettings.mixMode == 1) {
+        const int throttleIn = constrain((int)transmitter.globalSettings.mixThrottleInput, 1, 12) - 1;
+        const int steeringIn = constrain((int)transmitter.globalSettings.mixSteeringInput, 1, 12) - 1;
+        const int leftOut = constrain((int)transmitter.globalSettings.mixLeftOutput, 1, 12) - 1;
+        const int rightOut = constrain((int)transmitter.globalSettings.mixRightOutput, 1, 12) - 1;
+
+        // Reject identical outputs; preserve the unmixed channel values in that case.
+        if (leftOut != rightOut) {
+            // Snapshot both inputs before writing, so input/output channels may overlap.
+            int32_t throttle;
+            int32_t steering = (int32_t)rcChannels[steeringIn] - 992;
+
+            if (transmitter.globalSettings.throttleCentered) {
+                throttle = (int32_t)rcChannels[throttleIn] - 992;
+            } else {
+                // Uncentered throttle: 172 is idle; reverse is not generated.
+                throttle = (int32_t)rcChannels[throttleIn] - CRSF_DIGITAL_CHANNEL_MIN;
+            }
+
+            throttle = (throttle * transmitter.globalSettings.mixThrottleRate) / 100;
+            steering = (steering * transmitter.globalSettings.mixSteeringRate) / 100;
+
+            int32_t leftValue;
+            int32_t rightValue;
+            if (transmitter.globalSettings.throttleCentered) {
+                int32_t leftOffset = throttle + steering;
+                int32_t rightOffset = throttle - steering;
+
+                // Without pivot mode, steering can slow one motor but cannot reverse it.
+                if (!transmitter.globalSettings.mixSpin) {
+                    if (throttle >= 0) {
+                        leftOffset = max((int32_t)0, leftOffset);
+                        rightOffset = max((int32_t)0, rightOffset);
+                    } else {
+                        leftOffset = min((int32_t)0, leftOffset);
+                        rightOffset = min((int32_t)0, rightOffset);
+                    }
+                }
+                leftValue = 992 + leftOffset;
+                rightValue = 992 + rightOffset;
+            } else {
+                leftValue = CRSF_DIGITAL_CHANNEL_MIN + throttle + steering;
+                rightValue = CRSF_DIGITAL_CHANNEL_MIN + throttle - steering;
+            }
+
+            leftValue = constrain(leftValue, (int32_t)CRSF_DIGITAL_CHANNEL_MIN,
+                                  (int32_t)CRSF_DIGITAL_CHANNEL_MAX);
+            rightValue = constrain(rightValue, (int32_t)CRSF_DIGITAL_CHANNEL_MIN,
+                                   (int32_t)CRSF_DIGITAL_CHANNEL_MAX);
+
+            rcChannels[leftOut] = (int16_t)leftValue;
+            rcChannels[rightOut] = (int16_t)rightValue;
+        }
+    }
 }
 
 
@@ -951,9 +1008,11 @@ void statusDisplay(){
     int connectionState = 0;
     uint32_t currentTime = millis();
     static uint32_t lastScreenUpdateTime = 0;
-    // 首页包含实时摇杆准星：固定约 30 FPS 刷新，避免 ARMED 状态下原先 500ms（仅 2 FPS）造成卡顿。
-    // 其他页面仍沿用原来的低刷新频率，避免无谓增加菜单页刷新开销。
-    uint16_t screenUpdateTime = (currentScreen == MAIN_PAGE) ? 33 :
+    // 主页和通道输出页都显示实时摇杆/通道位置，统一固定约 30 FPS。
+    // 原先 CHANNEL_OUTPUTS 在 ARMED 状态下只有 2 FPS（500ms），未解锁时也只有 10 FPS（100ms），
+    // 因此拨杆时明显一卡一卡；现在与首页保持相同刷新节奏。
+    // 其他静态页面仍保持原有刷新频率，避免增加不必要的 OLED 总线负担。
+    uint16_t screenUpdateTime = (currentScreen == MAIN_PAGE || currentScreen == CHANNEL_OUTPUTS) ? 33 :
                                 ((ARMED && !btJoystickModeActive) ? 500 : 100);
     if (currentTime - lastScreenUpdateTime >= screenUpdateTime) { 
         lastScreenUpdateTime = currentTime;
