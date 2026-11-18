@@ -106,8 +106,9 @@ struct HandsetSettings {
     uint8_t mixSteeringInput;     // Steering input channel
     uint8_t mixLeftOutput;        // Left motor output channel
     uint8_t mixRightOutput;       // Right motor output channel
-    uint8_t mixRate;              // Steering mix rate, 0-100%
-    bool mixSteeringReverse;      // Reverse steering direction
+    uint8_t mixThrottleRate;      // Throttle mix rate, 0-100%
+    int8_t mixSteeringRate;       // Steering mix rate, -100% to +100%; sign also selects direction
+    bool mixSpin;                 // Allow pivot turns (opposite motor directions)
 };
 
 // Handset 类：封装手台设置的加载、保存与菜单构建逻辑
