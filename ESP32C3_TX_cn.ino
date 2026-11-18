@@ -714,14 +714,29 @@ void mapChannels() {
         // Reject identical outputs; preserve the unmixed channel values in that case.
         if (leftOut != rightOut) {
             // Snapshot both inputs before writing, so input/output channels may overlap.
-            const int32_t throttle = (int32_t)rcChannels[throttleIn] - 992;
+            int32_t throttle;
             int32_t steering = (int32_t)rcChannels[steeringIn] - 992;
+
+            if (transmitter.globalSettings.throttleCentered) {
+                // Centered throttle: 992 is neutral, allowing forward and reverse.
+                throttle = (int32_t)rcChannels[throttleIn] - 992;
+            } else {
+                // Uncentered throttle: 172 is idle and output remains forward-only.
+                throttle = (int32_t)rcChannels[throttleIn] - CRSF_DIGITAL_CHANNEL_MIN;
+            }
 
             if (transmitter.globalSettings.mixSteeringReverse) steering = -steering;
             steering = (steering * transmitter.globalSettings.mixRate) / 100;
 
-            int32_t leftValue = 992 + throttle + steering;
-            int32_t rightValue = 992 + throttle - steering;
+            int32_t leftValue;
+            int32_t rightValue;
+            if (transmitter.globalSettings.throttleCentered) {
+                leftValue = 992 + throttle + steering;
+                rightValue = 992 + throttle - steering;
+            } else {
+                leftValue = CRSF_DIGITAL_CHANNEL_MIN + throttle + steering;
+                rightValue = CRSF_DIGITAL_CHANNEL_MIN + throttle - steering;
+            }
 
             leftValue = constrain(leftValue, (int32_t)CRSF_DIGITAL_CHANNEL_MIN,
                                   (int32_t)CRSF_DIGITAL_CHANNEL_MAX);
