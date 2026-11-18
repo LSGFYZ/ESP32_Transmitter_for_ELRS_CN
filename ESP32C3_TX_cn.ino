@@ -701,7 +701,37 @@ void mapChannels() {
 
     rcChannels[AUX1] = (stickValues[SW1] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
     rcChannels[AUX2] = (stickValues[SW2] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
-    rcChannels[AUX3] = (stickValues[SW3] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;    
+    rcChannels[AUX3] = (stickValues[SW3] == 1) ? CRSF_DIGITAL_CHANNEL_MAX : CRSF_DIGITAL_CHANNEL_MIN;
+
+    // Differential mixer runs after normal channel mapping and AUX assignment.
+    // CUSTOM is reserved for a future implementation; only mode 1 mixes.
+    if (transmitter.globalSettings.mixMode == 1) {
+        const int throttleIn = constrain((int)transmitter.globalSettings.mixThrottleInput, 1, 12) - 1;
+        const int steeringIn = constrain((int)transmitter.globalSettings.mixSteeringInput, 1, 12) - 1;
+        const int leftOut = constrain((int)transmitter.globalSettings.mixLeftOutput, 1, 12) - 1;
+        const int rightOut = constrain((int)transmitter.globalSettings.mixRightOutput, 1, 12) - 1;
+
+        // Reject identical outputs; preserve the unmixed channel values in that case.
+        if (leftOut != rightOut) {
+            // Snapshot both inputs before writing, so input/output channels may overlap.
+            const int32_t throttle = (int32_t)rcChannels[throttleIn] - 992;
+            int32_t steering = (int32_t)rcChannels[steeringIn] - 992;
+
+            if (transmitter.globalSettings.mixSteeringReverse) steering = -steering;
+            steering = (steering * transmitter.globalSettings.mixRate) / 100;
+
+            int32_t leftValue = 992 + throttle + steering;
+            int32_t rightValue = 992 + throttle - steering;
+
+            leftValue = constrain(leftValue, (int32_t)CRSF_DIGITAL_CHANNEL_MIN,
+                                  (int32_t)CRSF_DIGITAL_CHANNEL_MAX);
+            rightValue = constrain(rightValue, (int32_t)CRSF_DIGITAL_CHANNEL_MIN,
+                                   (int32_t)CRSF_DIGITAL_CHANNEL_MAX);
+
+            rcChannels[leftOut] = (int16_t)leftValue;
+            rcChannels[rightOut] = (int16_t)rightValue;
+        }
+    }
 }
 
 
