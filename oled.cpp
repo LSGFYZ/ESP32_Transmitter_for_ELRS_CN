@@ -20,7 +20,7 @@ displayState currentScreen = MAIN_PAGE;
 displayState lastScreen;
 menuMode menuState = MENU_BROWSE;
 
-drawUiStr(u8g2_uint_t x, u8g2_uint_t y, const char* source) {
+static void drawUiStr(u8g2_uint_t x, u8g2_uint_t y, const char* source) {
     const char* translated = translateUiText(source);
     if (translated == source) { display.drawStr(x, y, source); return; }
     const uint8_t* previousFont = display.getU8g2()->font;
@@ -29,7 +29,7 @@ drawUiStr(u8g2_uint_t x, u8g2_uint_t y, const char* source) {
     display.drawUTF8(x, y + 3, translated);
     display.setFont(previousFont);
 }
-getUiTextWidth(const char* source) {
+static int getUiTextWidth(const char* source) {
     const char* translated = translateUiText(source);
     if (translated == source) return display.getStrWidth(source);
     const uint8_t* previousFont = display.getU8g2()->font;
@@ -38,7 +38,7 @@ getUiTextWidth(const char* source) {
     display.setFont(previousFont);
     return width;
 }
-printUiText(const char* source) {
+static void printUiText(const char* source) {
     const char* translated = translateUiText(source);
     if (translated == source) { display.print(source); return; }
     const uint8_t* previousFont = display.getU8g2()->font;
