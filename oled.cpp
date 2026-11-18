@@ -843,9 +843,10 @@ void drawMenuScreen(const ParamCollection& menu) {
     switch (menuState) {
         case MENU_EDIT:
             // 编辑模式：顶部标签 + 编辑框 + 方向箭头
+            // 先绘制边框，再绘制标签，避免边框覆盖较高的中文字体字形
+            display.drawFrame(OLED_X_OFFSET, OLED_Y_OFFSET + 14, 72, 26);
             display.setCursor(OLED_X_OFFSET + 3, OLED_Y_OFFSET + 12);
             printUiText(param.label);
-            display.drawFrame(OLED_X_OFFSET, OLED_Y_OFFSET + 14, 72, 26);
 
             // 根据值和类型绘制可调方向箭头
             if (menu.editValue > param.minVal) {   
