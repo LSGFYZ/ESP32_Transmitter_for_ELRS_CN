@@ -84,7 +84,7 @@ void drawBootLogo() {
     display.print("ELRS");
     
     display.setCursor(OLED_X_OFFSET + 50, OLED_Y_OFFSET + 36);
-    display.print("v1.0");
+    display.print("v1.3");
     
     display.sendBuffer();     
 }
